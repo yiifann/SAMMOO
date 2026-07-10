@@ -114,7 +114,8 @@ class BaseNet(nn.Module):
         torch.backends.cudnn.deterministic = True
     
     def log_wandb(self, log_dict):
-        self.wandb.log(log_dict)
+        if self.wandb is not None:
+            self.wandb.log(log_dict)
     
     def _val(self, loader):
         """Compute model output on validation set"""

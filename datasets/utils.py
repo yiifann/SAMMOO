@@ -122,13 +122,13 @@ def get_dataset(opt):
     train_loader = torch.utils.data.DataLoader(
                             train_data, batch_size=opt['batch_size'], 
                             sampler=sampler,
-                            shuffle=(opt['experiment']!='resampling' and opt['experiment']!='GroupDRO' and opt['experiment']!='resamplingSWAD'), num_workers=8, 
-                            worker_init_fn=seed_worker, generator=g, pin_memory=True)
+                            shuffle=(opt['experiment']!='resampling' and opt['experiment']!='GroupDRO' and opt['experiment']!='resamplingSWAD'), num_workers=0, 
+                            worker_init_fn=seed_worker, generator=g, pin_memory=False)
     val_loader = torch.utils.data.DataLoader(
                           val_data, batch_size=opt['batch_size'],
-                          shuffle=True, num_workers=8, worker_init_fn=seed_worker, generator=g, pin_memory=True)
+                          shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g, pin_memory=False)
     test_loader = torch.utils.data.DataLoader(
                            test_data, batch_size=opt['batch_size'],
-                           shuffle=True, num_workers=8, worker_init_fn=seed_worker, generator=g, pin_memory=True)
+                           shuffle=True, num_workers=0, worker_init_fn=seed_worker, generator=g, pin_memory=False)
 
     return train_data, val_data, test_data, train_loader, val_loader, test_loader, val_meta, test_meta

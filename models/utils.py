@@ -23,7 +23,7 @@ def standard_train(opt, network, optimizer, loader, _criterion, wandb):
         train_loss += loss.item()
         no_iter += 1
         
-        if opt['log_freq'] and (i % opt['log_freq'] == 0):
+        if wandb is not None and opt['log_freq'] and (i % opt['log_freq'] == 0):
             wandb.log({'Training loss': train_loss / no_iter, 'Training AUC': auc / no_iter})
 
     auc = 100 * auc / no_iter
@@ -57,7 +57,7 @@ def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
             
             no_iter += 1
             
-            if opt['log_freq'] and (i % opt['log_freq'] == 0):
+            if wandb is not None and opt['log_freq'] and (i % opt['log_freq'] == 0):
                 wandb.log({'Validation loss': val_loss / no_iter, 'Validation AUC': auc / no_iter})
 
     auc = 100 * auc / no_iter

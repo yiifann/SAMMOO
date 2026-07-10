@@ -200,11 +200,21 @@ def conditional_errors_multi(preds, labels, attrs, sens_classes):
 
 def bce_loss(pred_probs, labels):
     bce = nn.BCELoss()
-    
-    pred_probs, labels = torch.from_numpy(pred_probs).flatten().cuda(), torch.from_numpy(labels).flatten().cuda()
+
+    # 指标计算放在 CPU 上，不再强制使用 CUDA
+    pred_probs = torch.as_tensor(
+        pred_probs,
+        dtype=torch.float32
+    ).flatten()
+
+    labels = torch.as_tensor(
+        labels,
+        dtype=torch.float32
+    ).flatten()
+
     with torch.no_grad():
         loss = bce(pred_probs, labels)
-    #print(loss)
+
     return loss.item()
 
 

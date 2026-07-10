@@ -40,9 +40,9 @@ def get_model(opt, wandb):
 def avg_eval(val_df, opt, mode = 'val'):
     val_df = val_df.reset_index(drop=True)
 
-    mean_df = val_df.mean()
-    std_df = val_df.std()
-    sem_df = val_df.sem()
+    mean_df = val_df.mean(numeric_only=True)
+    std_df = val_df.std(numeric_only=True)
+    sem_df = val_df.sem(numeric_only=True)
     ci95_hi = pd.DataFrame(mean_df + 1.96 * sem_df).transpose()
     ci95_lo = pd.DataFrame(mean_df - 1.96 * sem_df).transpose()
     mean_df = pd.DataFrame(mean_df).transpose()

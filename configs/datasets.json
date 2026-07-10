@@ -39,13 +39,13 @@
     },
     "HAM10000":
     {
-        "image_feature_path": "yourpath",
-        "pickle_train_path": "yourpath",
-        "pickle_val_path": "yourpath",
-        "pickle_test_path": "yourpath",
-        "train_meta_path": "yourpath",
-        "val_meta_path": "yourpath",
-        "test_meta_path": "yourpath"
+        "image_feature_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/",
+        "pickle_train_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/pkls/train_images.pkl",
+        "pickle_val_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/pkls/val_images.pkl",
+        "pickle_test_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/pkls/test_images.pkl",
+        "train_meta_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/split/new_train.csv",
+        "val_meta_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/split/new_val.csv",
+        "test_meta_path": "/Users/yiifann2021/Desktop/MEDFAIR/MEDFAIR_datasets/HAM10000/split/new_test.csv"
     },
     "Fitz17k":
     {

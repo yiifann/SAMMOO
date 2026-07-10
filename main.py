@@ -22,7 +22,9 @@ if __name__ == '__main__':
     opt, wandb = parse_args.collect_args()
     if not opt['test_mode']:
         
-        random_seeds = np.random.choice(range(100), size = 3, replace=False).tolist()
+        #random_seeds = np.random.choice(range(100), size = 3, replace=False).tolist()
+        random_seeds = [0]
+
         val_df = pd.DataFrame()
         test_df = pd.DataFrame()
         print('Random seed: ', random_seeds)

@@ -9,6 +9,7 @@ import wandb
 import json
 import hashlib
 import time
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
 def collect_args():
@@ -34,11 +35,12 @@ def collect_args():
                             'GroupDRO',
                             'BayesCNN',
                             'resamplingSWAD',
+                            'SAMMOO',
                         ])
 
     parser.add_argument('--experiment_name', type=str, default='test')
     parser.add_argument('--wandb_name', type=str, default='baseline')
-    parser.add_argument('--if_wandb', type=bool, default=True)
+    parser.add_argument('--if_wandb', type=bool, default=False)
     parser.add_argument('--dataset_name', default='CXP', choices=['CXP', 'NIH', 'MIMIC_CXR', 'RadFusion', 'RadFusion4', 
     'HAM10000', 'HAM100004', 'Fitz17k', 'OCT', 'PAPILA', 'ADNI', 'ADNI3T', 'COVID_CT_MD','RadFusion_EHR',
     'MIMIC_III', 'eICU'])
@@ -124,6 +126,24 @@ def collect_args():
     parser.add_argument("--rho", type=float, default=2, help="Rho parameter for SAM.")
     parser.add_argument("--adaptive", type=bool, default=True, help="whether using adaptive mode for SAM.")
     parser.add_argument("--T_max", type=int, default=50, help="Value for LR scheduler")
+
+    # SAMMOO
+    parser.add_argument("--alpha_mode",
+                        type=str,
+                        default="frank_wolfe",
+                        choices=[
+                            "softmax",
+                            "normalized",
+                            "worst",
+                            "frank_wolfe",
+                            "sample_mean",
+                            ])
+
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--fw_max_iter", type=int, default=1)
+    parser.add_argument("--fw_max_gamma", type=float, default=0.5)
+    parser.add_argument("--recompute_alpha_at_adv", action="store_true")
+
     
     # GSAM
     parser.add_argument("--gsam_alpha", type=float, default=2, help="Rho parameter for SAM.")
@@ -131,7 +151,7 @@ def collect_args():
     # BayesCNN
     parser.add_argument("--num_monte_carlo", type=int, default=10, help="Rho parameter for SAM.")
     
-    parser.set_defaults(cuda=True)
+    parser.set_defaults(cuda=torch.cuda.is_available())
     
     # logging 
     parser.add_argument('--log_freq', type=int, default=50, help = 'logging frequency (step)')
@@ -150,10 +170,54 @@ def create_exerpiment_setting(opt):
     opt['hash'] = run_hash.hexdigest()[:10]
     print('run hash (first 10 digits): ', opt['hash'])
     
-    opt['device'] = torch.device('cuda' if opt['cuda'] else 'cpu')
+    if opt['cuda'] and torch.cuda.is_available():
+        opt['device'] = torch.device('cuda')
+    else:
+        opt['cuda'] = False
+        opt['device'] = torch.device('cpu')
+
+    print("Using device:", opt['device'])
     
-    opt['save_folder'] = os.path.join('your_path/fariness_data/model_records', opt['dataset_name'], opt['sensitive_name'], opt['backbone'], opt['experiment'])
-    opt['resume_path'] = opt['save_folder']
+    if opt["experiment"] == "SAMMOO":
+        if opt["alpha_mode"] == "frank_wolfe":
+            experiment_folder = os.path.join(
+                "SAMMOO",
+                (
+                    f"frank_wolfe_"
+                    f"iter{opt['fw_max_iter']}_"
+                    f"gamma{opt['fw_max_gamma']}"
+                ),
+            )
+
+        elif opt["alpha_mode"] == "softmax":
+            experiment_folder = os.path.join(
+                "SAMMOO",
+                f"softmax_temp{opt['temperature']}",
+            )
+
+        else:
+            experiment_folder = os.path.join(
+                "SAMMOO",
+                opt["alpha_mode"],
+            )
+
+    else:
+        experiment_folder = opt["experiment"]
+
+
+    opt["save_folder"] = os.path.join(
+        PROJECT_ROOT,
+        "model_records",
+        opt["dataset_name"],
+        opt["sensitive_name"],
+        opt["backbone"],
+        experiment_folder,
+    )
+
+
+
+    if not opt['resume_path']:
+        opt['resume_path'] = opt['save_folder']
     basics.creat_folder(opt['save_folder'])
     
     optimizer_setting = {
