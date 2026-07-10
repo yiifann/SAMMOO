@@ -151,7 +151,7 @@ def collect_args():
     # BayesCNN
     parser.add_argument("--num_monte_carlo", type=int, default=10, help="Rho parameter for SAM.")
     
-    parser.set_defaults(cuda=torch.cuda.is_available())
+    parser.set_defaults(cuda=torch.cuda.is_available() or torch.backends.mps.is_available())
     
     # logging 
     parser.add_argument('--log_freq', type=int, default=50, help = 'logging frequency (step)')
@@ -172,6 +172,8 @@ def create_exerpiment_setting(opt):
     
     if opt['cuda'] and torch.cuda.is_available():
         opt['device'] = torch.device('cuda')
+    elif opt['cuda'] and torch.backends.mps.is_available():
+        opt['device'] = torch.device('mps')
     else:
         opt['cuda'] = False
         opt['device'] = torch.device('cpu')
@@ -240,15 +242,18 @@ def create_exerpiment_setting(opt):
     if opt['cross_testing']:
         opt['dataset_name'] = opt['target_domain']
     
-    with open('configs/datasets.json', 'r') as f:
+    with open(os.path.join(PROJECT_ROOT, 'configs/datasets.json'), 'r') as f:
         data_path = json.load(f)
 
     try:
         data_setting = data_path[opt['dataset_name']]
         data_setting['augment'] = True
+        for key, value in data_setting.items():
+            if key.endswith('_path') and isinstance(value, str) and value and not os.path.isabs(value):
+                data_setting[key] = os.path.join(PROJECT_ROOT, value)
     except:
         data_setting = {}
-    
+
     opt['data_setting'] = data_setting
     
     # experiment-specific setting

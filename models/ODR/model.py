@@ -157,12 +157,8 @@ class ODRModel(nn.Module):
     def reparameterization_ODR(self, mean_t, mean_s, log_var_t, log_var_s):
 
         mean_1, mean_2 = self.mean_tensors(np.zeros(128), np.ones(128), 13)
-        if mean_t.is_cuda:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).cuda())
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).cuda())
-        else:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)))
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)))
+        z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).to(mean_t.device))
+        z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).to(mean_s.device))
         return z1, z2
     
     def forward(self, x):
@@ -322,12 +318,8 @@ class ODRModel3D(nn.Module):
     def reparameterization_ODR(self, mean_t, mean_s, log_var_t, log_var_s):
 
         mean_1, mean_2 = self.mean_tensors(np.zeros(128), np.ones(128), 13)
-        if mean_t.is_cuda:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).cuda())
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).cuda())
-        else:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)))
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)))
+        z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).to(mean_t.device))
+        z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).to(mean_s.device))
         return z1, z2
     
     def forward(self, x):
@@ -472,12 +464,8 @@ class ODRModel_MLP(nn.Module):
     def reparameterization_ODR(self, mean_t, mean_s, log_var_t, log_var_s):
 
         mean_1, mean_2 = self.mean_tensors(np.zeros(128), np.ones(128), 13)
-        if mean_t.is_cuda:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).cuda())
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).cuda())
-        else:
-            z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)))
-            z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)))
+        z1 = mean_t + (torch.exp(log_var_t/2) @ torch.normal(mean_1, torch.eye(128)).to(mean_t.device))
+        z2 = mean_s + (torch.exp(log_var_s/2) @ torch.normal(mean_2, torch.eye(128)).to(mean_s.device))
         return z1, z2
     
     def forward(self, x):

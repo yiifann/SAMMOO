@@ -41,7 +41,8 @@ class GroupDRO(BaseNet):
             step_size=0.01,
             normalize_loss=False,
             btl=False,
-            min_var_weight=0)
+            min_var_weight=0,
+            device=self.device)
     
     def set_network(self, opt):
         """Define the network"""

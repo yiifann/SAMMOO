@@ -4,7 +4,7 @@ from importlib import import_module
 
 
 class LaftrNet(nn.Module):
-    def __init__(self, backbone, num_classes, adversary_size = 128, pretrained = True, device = 'cuda', model_var = 'laftr-dp'):
+    def __init__(self, backbone, num_classes, adversary_size = 128, pretrained = True, device = None, model_var = 'laftr-dp'):
         super(LaftrNet, self).__init__()
         
         self.backbone = backbone
@@ -54,7 +54,7 @@ class LaftrNet(nn.Module):
 
 
 class LaftrNet3D(nn.Module):
-    def __init__(self, backbone, num_classes, adversary_size = 128, pretrained = True, device = 'cuda', model_var = 'laftr-dp'):
+    def __init__(self, backbone, num_classes, adversary_size = 128, pretrained = True, device = None, model_var = 'laftr-dp'):
         super(LaftrNet3D, self).__init__()
         
         self.backbone = backbone
@@ -105,7 +105,7 @@ class LaftrNet3D(nn.Module):
 
 
 class LaftrNet_MLP(nn.Module):
-    def __init__(self, backbone, num_classes, adversary_size = 128, device = 'cuda', model_var = 'laftr-dp', in_features=1024, hidden_features=1024):
+    def __init__(self, backbone, num_classes, adversary_size = 128, device = None, model_var = 'laftr-dp', in_features=1024, hidden_features=1024):
         super(LaftrNet_MLP, self).__init__()
         
         self.backbone = backbone

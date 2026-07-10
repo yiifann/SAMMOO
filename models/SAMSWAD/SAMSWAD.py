@@ -23,8 +23,8 @@ class SAMSWAD(SWA):
         self.annealing_epochs = opt['swa_annealing_epochs']
         
         self.set_optimizer(opt)
-        self.swad = LossValley(n_converge = opt['swad_n_converge'], n_tolerance = opt['swad_n_converge'] + opt['swad_n_tolerance'], 
-                               tolerance_ratio = opt['swad_tolerance_ratio'])
+        self.swad = LossValley(n_converge = opt['swad_n_converge'], n_tolerance = opt['swad_n_converge'] + opt['swad_n_tolerance'],
+                               tolerance_ratio = opt['swad_tolerance_ratio'], device = self.device)
         
         self.step = 0
         
