@@ -1,6 +1,7 @@
 ## Updates
 1. Simplified package requirements (reduced to ~10 from ~200): You will need to reinstall this simplified packages in a new environment using `requirements.txt`
 2. MPS compatibility: Now you can use your Apple Silicon to perform training and evaluation
+3. Replaced
 
 
 ## Acknowledgement / Credits
