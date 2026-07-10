@@ -1,7 +1,8 @@
-# MEDFAIR: Benchmarking Fairness for Medical Imaging
+## Acknowledgement / Credits
 
-MEDFAIR is a fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). The offical link is: https://github.com/ys-zong/MEDFAIR.git
+This project is a modified version of the original work by Yongshuo Zong (https://github.com/ys-zong/MEDFAIR.git). 
 
-This is author's website: [website](https://ys-zong.github.io/MEDFAIR/) for a brief summary of their paper.
+- **Original Repository:** [MEDFAIR: Benchmarking Fairness for Medical Imaging](https://github.com/ys-zong/MEDFAIR.git)
+- **Changes made:** We add one new bias mitigation algorithm -- SAMMOO
 
-
+Thank you to the original author for their great work!
