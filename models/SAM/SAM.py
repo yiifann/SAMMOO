@@ -68,8 +68,7 @@ class SAM(BaseNet):
             loss = self._criterion(outputs, targets)
             loss.mean().backward()
             self.optimizer.first_step(zero_grad=True)
-            self.scheduler.step()
-            
+
             disable_running_stats(self.network)
             outputs, _ = self.network(images)
             self._criterion(outputs, targets).mean().backward()

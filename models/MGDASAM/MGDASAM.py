@@ -14,20 +14,25 @@ from models.SAM.utils import (
     enable_running_stats,
 )
 
-from models.SAMMOO.utils import (
-    compute_group_loss_weights,
+from models.MGDASAM.utils import (
     compute_present_group_losses,
+    gram_matrix,
+    mgda_frank_wolfe,
 )
 
 
-class SAMMOO(BaseNet):
-    def __init__(self, opt, wandb):
-        super(SAMMOO, self).__init__(opt, wandb)
+class MGDASAM(BaseNet):
+    """
+    SAM (Foret et al., 2021) combined with a true gradient-based MGDA-UB solve
+    (Sener & Koltun, 2018) over sensitive-attribute group losses, in place of
+    SAMMOO's scalar-loss heuristic. See docs/MGDASAM.md for the full formulation.
+    """
 
-        self.alpha_mode = opt["alpha_mode"]
-        self.temperature = opt["temperature"]
-        self.fw_max_iter = opt["fw_max_iter"]
-        self.fw_max_gamma = opt["fw_max_gamma"]
+    def __init__(self, opt, wandb):
+        super(MGDASAM, self).__init__(opt, wandb)
+
+        self.mgda_max_iter = opt["mgda_max_iter"]
+        self.mgda_stop_tol = opt["mgda_stop_tol"]
         self.recompute_alpha_at_adv = opt["recompute_alpha_at_adv"]
 
         self.set_network(opt)
@@ -74,7 +79,6 @@ class SAMMOO(BaseNet):
             weight_decay=optimizer_setting["weight_decay"],
         )
 
-        # Preserve the original MEDFAIR SAM scheduler behavior.
         self.scheduler = CosineAnnealingLR(
             self.optimizer.base_optimizer,
             T_max=opt["T_max"],
@@ -91,20 +95,20 @@ class SAMMOO(BaseNet):
             "epoch": self.epoch,
         }
 
-    def _weighted_group_loss(
-        self,
-        outputs,
-        targets,
-        sensitive_attr,
-        fixed_weights=None,
-    ):
+    def _mgda_group_loss(self, outputs, z, targets, sensitive_attr, fixed_weights=None):
         """
-        Compute group losses and their weighted combination.
+        Compute per-group losses and combine them with MGDA-UB weights (or reuse
+        fixed_weights, e.g. the weights found at the clean forward pass).
+
+        z is the shared representation the MGDA-UB gradients are taken with
+        respect to (Sener & Koltun, 2018, Eq. 6). Since every sensitive group
+        shares the entire network here (no group-specific head), we use the
+        model's own output logits: they are one autograd hop from the loss
+        (no risk of a disconnected graph) and are the tightest valid choice
+        per the paper's chain-rule upper bound, since there is no earlier
+        branch point to cut at.
         """
-        per_sample_loss = self._criterion(
-            outputs,
-            targets,
-        ).reshape(-1)
+        per_sample_loss = self._criterion(outputs, targets).reshape(-1)
 
         group_ids, group_losses, group_counts = compute_present_group_losses(
             per_sample_loss=per_sample_loss,
@@ -113,30 +117,19 @@ class SAMMOO(BaseNet):
         )
 
         if fixed_weights is None:
-            if self.alpha_mode == "sample_mean":
-                # Ordinary sample-level mean loss.
-                #
-                # Example:
-                # 24 male + 8 female samples
-                # alpha_male = 24 / 32 = 0.75
-                # alpha_female = 8 / 32 = 0.25
-                counts = torch.stack([
-                    count.to(
-                        device=per_sample_loss.device,
-                        dtype=per_sample_loss.dtype,
-                    )
-                    for count in group_counts
-                ])
-
-                weights = counts / counts.sum()
-
+            if len(group_losses) == 1:
+                weights = torch.ones(1, device=self.device)
             else:
-                weights = compute_group_loss_weights(
-                    group_losses=group_losses,
-                    mode=self.alpha_mode,
-                    temperature=self.temperature,
-                    fw_max_iter=self.fw_max_iter,
-                    fw_max_gamma=self.fw_max_gamma,
+                group_grads = []
+                for group_loss in group_losses:
+                    grad_z = torch.autograd.grad(
+                        group_loss, z, retain_graph=True, create_graph=False
+                    )[0]
+                    group_grads.append(grad_z.detach().reshape(-1))
+
+                M = gram_matrix(group_grads)
+                weights = mgda_frank_wolfe(
+                    M, max_iter=self.mgda_max_iter, stop_tol=self.mgda_stop_tol
                 )
         else:
             weights = fixed_weights
@@ -155,7 +148,7 @@ class SAMMOO(BaseNet):
         return combined_loss, group_ids, group_losses, weights
 
     def _train(self, loader):
-        """Train SAM + loss-based group weighting for one epoch."""
+        """Train MGDA-UB-weighted SAM for one epoch."""
         self.network.train()
 
         total_loss = 0.0
@@ -163,36 +156,19 @@ class SAMMOO(BaseNet):
         auc_batches = 0
         no_iter = 0
 
-        group_loss_sums = {
-            group_id: 0.0
-            for group_id in range(self.sens_classes)
-        }
-
-        alpha_sums = {
-            group_id: 0.0
-            for group_id in range(self.sens_classes)
-        }
-
-        group_batch_counts = {
-            group_id: 0
-            for group_id in range(self.sens_classes)
-        }
+        group_loss_sums = {g: 0.0 for g in range(self.sens_classes)}
+        alpha_sums = {g: 0.0 for g in range(self.sens_classes)}
+        group_batch_counts = {g: 0 for g in range(self.sens_classes)}
 
         missing_group_batches = 0
 
-        for i, (
-            images,
-            targets,
-            sensitive_attr,
-            index,
-        ) in enumerate(loader):
-
+        for i, (images, targets, sensitive_attr, index) in enumerate(loader):
             images = images.to(self.device)
             targets = targets.to(self.device)
             sensitive_attr = sensitive_attr.to(self.device)
 
             # =====================================================
-            # SAM step 1: loss and gradient at original weights
+            # SAM step 1: MGDA-UB-weighted loss and gradient at clean weights
             # =====================================================
             enable_running_stats(self.network)
 
@@ -203,8 +179,9 @@ class SAMMOO(BaseNet):
                 group_ids,
                 group_losses,
                 weights,
-            ) = self._weighted_group_loss(
+            ) = self._mgda_group_loss(
                 outputs=outputs,
+                z=outputs,
                 targets=targets,
                 sensitive_attr=sensitive_attr,
             )
@@ -229,8 +206,9 @@ class SAMMOO(BaseNet):
                     group_ids_adv,
                     group_losses_adv,
                     weights_adv,
-                ) = self._weighted_group_loss(
+                ) = self._mgda_group_loss(
                     outputs=outputs_adv,
+                    z=outputs_adv,
                     targets=targets,
                     sensitive_attr=sensitive_attr,
                 )
@@ -240,8 +218,9 @@ class SAMMOO(BaseNet):
                     group_ids_adv,
                     group_losses_adv,
                     weights_adv,
-                ) = self._weighted_group_loss(
+                ) = self._mgda_group_loss(
                     outputs=outputs_adv,
+                    z=outputs_adv,
                     targets=targets,
                     sensitive_attr=sensitive_attr,
                     fixed_weights=weights,
@@ -273,29 +252,18 @@ class SAMMOO(BaseNet):
             no_iter += 1
 
             for local_idx, group_id in enumerate(group_ids):
-                group_loss_sums[group_id] += (
-                    group_losses[local_idx].item()
-                )
-
+                group_loss_sums[group_id] += group_losses[local_idx].item()
                 alpha_sums[group_id] += weights[local_idx].item()
                 group_batch_counts[group_id] += 1
 
             if self.log_freq and i % self.log_freq == 0:
-                log_dict = {
-                    "Training loss": total_loss / no_iter,
-                }
+                log_dict = {"Training loss": total_loss / no_iter}
 
                 for group_id in range(self.sens_classes):
                     count = group_batch_counts[group_id]
-
                     if count > 0:
-                        log_dict[
-                            f"Group {group_id} loss"
-                        ] = group_loss_sums[group_id] / count
-
-                        log_dict[
-                            f"Group {group_id} alpha"
-                        ] = alpha_sums[group_id] / count
+                        log_dict[f"Group {group_id} loss"] = group_loss_sums[group_id] / count
+                        log_dict[f"Group {group_id} alpha"] = alpha_sums[group_id] / count
 
                 self.log_wandb(log_dict)
 
@@ -306,36 +274,19 @@ class SAMMOO(BaseNet):
         else:
             average_auc = float("nan")
 
-        print(
-            f"Training epoch {self.epoch}: "
-            f"AUC:{average_auc}"
-        )
+        print(f"Training epoch {self.epoch}: AUC:{average_auc}")
+        print(f"Training epoch {self.epoch}: weighted loss:{average_loss}")
 
-        print(
-            f"Training epoch {self.epoch}: "
-            f"weighted loss:{average_loss}"
-        )
-
-        # For Sex in MEDFAIR:
-        # group 0 = Male, group 1 = Female
+        # For Sex in MEDFAIR: group 0 = Male, group 1 = Female
         for group_id in range(self.sens_classes):
             count = group_batch_counts[group_id]
-
             if count == 0:
                 continue
 
-            average_group_loss = (
-                group_loss_sums[group_id] / count
-            )
+            average_group_loss = group_loss_sums[group_id] / count
+            average_alpha = alpha_sums[group_id] / count
 
-            average_alpha = (
-                alpha_sums[group_id] / count
-            )
-
-            group_name = {
-                0: "Male",
-                1: "Female",
-            }.get(group_id, f"Group {group_id}")
+            group_name = {0: "Male", 1: "Female"}.get(group_id, f"Group {group_id}")
 
             print(
                 f"{group_name}: "
