@@ -12,6 +12,17 @@ import time
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def collect_args():
     parser = argparse.ArgumentParser()
     
@@ -36,6 +47,8 @@ def collect_args():
                             'BayesCNN',
                             'resamplingSWAD',
                             'SAMMOO',
+                            'MGDASAM',
+                            'SAMFW',
                         ])
 
     parser.add_argument('--experiment_name', type=str, default='test')
@@ -124,7 +137,7 @@ def collect_args():
     
     # SAM
     parser.add_argument("--rho", type=float, default=2, help="Rho parameter for SAM.")
-    parser.add_argument("--adaptive", type=bool, default=True, help="whether using adaptive mode for SAM.")
+    parser.add_argument("--adaptive", type=str2bool, default=False, help="whether using adaptive mode (ASAM) instead of vanilla SAM (Foret et al., 2021).")
     parser.add_argument("--T_max", type=int, default=50, help="Value for LR scheduler")
 
     # SAMMOO
@@ -144,6 +157,13 @@ def collect_args():
     parser.add_argument("--fw_max_gamma", type=float, default=0.5)
     parser.add_argument("--recompute_alpha_at_adv", action="store_true")
 
+    # MGDASAM
+    parser.add_argument("--mgda_max_iter", type=int, default=20, help="Frank-Wolfe iteration cap for the MGDA-UB solve.")
+    parser.add_argument("--mgda_stop_tol", type=float, default=1e-4, help="Early-stop threshold on gamma for the MGDA-UB Frank-Wolfe solve.")
+
+    # SAMFW
+    parser.add_argument("--beta_reset_every", type=int, default=1, help="Reset the online Frank-Wolfe step counter (and thus gamma_t) every N epochs; 0 disables resetting, matching the literal algorithm's global step counter.")
+
     
     # GSAM
     parser.add_argument("--gsam_alpha", type=float, default=2, help="Rho parameter for SAM.")
@@ -151,7 +171,7 @@ def collect_args():
     # BayesCNN
     parser.add_argument("--num_monte_carlo", type=int, default=10, help="Rho parameter for SAM.")
     
-    parser.set_defaults(cuda=torch.cuda.is_available())
+    parser.set_defaults(cuda=torch.cuda.is_available() or torch.backends.mps.is_available())
     
     # logging 
     parser.add_argument('--log_freq', type=int, default=50, help = 'logging frequency (step)')
@@ -172,6 +192,8 @@ def create_exerpiment_setting(opt):
     
     if opt['cuda'] and torch.cuda.is_available():
         opt['device'] = torch.device('cuda')
+    elif opt['cuda'] and torch.backends.mps.is_available():
+        opt['device'] = torch.device('mps')
     else:
         opt['cuda'] = False
         opt['device'] = torch.device('cpu')
@@ -240,15 +262,18 @@ def create_exerpiment_setting(opt):
     if opt['cross_testing']:
         opt['dataset_name'] = opt['target_domain']
     
-    with open('configs/datasets.json', 'r') as f:
+    with open(os.path.join(PROJECT_ROOT, 'configs/datasets.json'), 'r') as f:
         data_path = json.load(f)
 
     try:
         data_setting = data_path[opt['dataset_name']]
         data_setting['augment'] = True
+        for key, value in data_setting.items():
+            if key.endswith('_path') and isinstance(value, str) and value and not os.path.isabs(value):
+                data_setting[key] = os.path.join(PROJECT_ROOT, value)
     except:
         data_setting = {}
-    
+
     opt['data_setting'] = data_setting
     
     # experiment-specific setting

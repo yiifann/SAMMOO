@@ -23,7 +23,7 @@ if __name__ == '__main__':
     if not opt['test_mode']:
         
         #random_seeds = np.random.choice(range(100), size = 3, replace=False).tolist()
-        random_seeds = [0]
+        random_seeds = [opt['random_seed']]
 
         val_df = pd.DataFrame()
         test_df = pd.DataFrame()

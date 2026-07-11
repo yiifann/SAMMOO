@@ -114,7 +114,7 @@ class CFairNet3D(nn.Module):
 
 
 class CFairNet_MLP(nn.Module):
-    def __init__(self, backbone, num_classes, adversary_size = 128, device = 'cuda', in_features=1024, hidden_features=1024):
+    def __init__(self, backbone, num_classes, adversary_size = 128, device = None, in_features=1024, hidden_features=1024):
         super(CFairNet_MLP, self).__init__()
         
         self.backbone = backbone

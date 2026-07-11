@@ -115,13 +115,13 @@ def calculate_FPR_FNR(pred_df, test_meta, opt):
             FPR = len(pred_fp) / len(gt_fp)
             FPR_y.append(round(FPR, 4))
         else:
-            FPR_y.append(np.NaN)
+            FPR_y.append(np.nan)
             
         if len(gt_fn) != 0 :
             FNR = len(pred_fn) / len(gt_fn)
             FNR_y.append(round(FNR, 4))
         else:
-            FNR_y.append(np.NaN)
+            FNR_y.append(np.nan)
     return overall_FPR, overall_FNR, FPR_y, FNR_y
 
 
