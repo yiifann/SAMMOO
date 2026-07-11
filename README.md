@@ -10,7 +10,7 @@
 
    ​	-- Change path to your path (Only 1 path need to be changed at the beginning)
 
-5. Upload result.txt (results about PAPULA, cmd and details can be found in it)
+5. Upload result.txt (results about PAPILA, cmd and details can be found in it)
 
    
 
