@@ -1,0 +1,35 @@
+
+
+python main.py \
+  --experiment baseline \
+  --dataset_name PAPILA \
+  --backbone cusResNet18 \
+  --total_epochs 20 \
+  --early_stopping 5 \
+  --sensitive_name Sex \
+  --batch_size 32 \
+  --lr 1e-4 \
+  --weight_decay 1e-4 \
+  --sens_classes 2 \
+  --output_dim 1 \
+  --num_classes 1 \
+  --val_strategy worst_auc \
+  --log_freq 0
+
+
+
+
+
+
+run hash (first 10 digits):  207bef76fe
+Using device: mps
+Random seed:  [0]
+loaded dataset  PAPILA
+
+...
+
+
+Validation performance:  {'Val Overall AUC': 0.9336870026525199, 'Val auc-group_0': 0.8547008547008548, 'Val auc-group_1': 1.0, 'Val Overall Acc': np.float64(0.8809523809523809), 'Val acc-group_0': np.float64(0.7727272727272727), 'Val acc-group_1': np.float64(1.0), 'Val DP': np.float64(0.9272727272727272), 'Val EqOpp1': np.float64(0.9230769230769231), 'Val EqOpp0': np.float64(0.5555555555555556), 'Val EqOdd': np.float64(0.7393162393162394), 'Val EqOdd_0.5': np.float64(0.6837606837606838), 'Val EqOdd_specificity_0.8': np.float64(0.860309829059829), 'Val EqOdd_sensitivity_0.8': np.float64(0.8047542735042735), 'Val Overall ECE': np.float64(0.12574211986447198), 'Val Overall BCE': 0.3334731161594391, 'Val tpr_at_tnr_0': array(0.75555556), 'Val fnr_at_thres-group_0': 0.5555555555555556, 'Val fpr_at_thres-group_0': np.float64(0.07692307692307687), 'Val recall_at_thres-group_0': 0.4444444444444444, 'Val specificity_at_thres-group_0': np.float64(0.9230769230769231), 'Val ECE-group_0': np.float64(0.22964223865842956), 'Val BCE-group_0': 0.5556643605232239, 'Val tpr_at_tnr_1': array(0.2), 'Val fnr_at_thres-group_1': 0.0, 'Val fpr_at_thres-group_1': np.float64(0.0), 'Val recall_at_thres-group_1': 1.0, 'Val specificity_at_thres-group_1': np.float64(1.0), 'Val ECE-group_1': np.float64(0.0766470106667839), 'Val BCE-group_1': 0.08906283229589462, 'Val worst_auc': 0.8547008547008548, 'Val worst_group': 'auc-group_0', 'Val Overall FPR': 0.034482758620689655, 'Val Overall FNR': 0.3076923076923077, 'Val FPR-group_0': 0.0769, 'Val FPR-group_1': 0.0, 'Val FNR-group_0': 0.4444, 'Val FNR-group_1': 0.0}
+Testing, loaded model from  /Users/yiifann2021/Desktop/MEDFAIR_SAMMOO/model_records/PAPILA/Sex/cusResNet18/baseline/0_best.pth
+Finish testing, testing performance: 
+{'Test Overall AUC': 0.80703125, 'Test auc-group_0': 0.7455357142857143, 'Test auc-group_1': 0.8518518518518519, 'Test Overall Acc': np.float64(0.7261904761904762), 'Test acc-group_0': np.float64(0.6666666666666666), 'Test acc-group_1': np.float64(0.7708333333333334), 'Test DP': np.float64(0.8125), 'Test EqOpp1': np.float64(0.8015873015873016), 'Test EqOpp0': np.float64(0.7916666666666666), 'Test EqOdd': np.float64(0.7966269841269842), 'Test EqOdd_0.5': np.float64(0.7966269841269842), 'Test EqOdd_specificity_0.8': np.float64(0.9236111111111112), 'Test EqOdd_sensitivity_0.8': np.float64(0.8898809523809523), 'Test Overall ECE': np.float64(0.20484609155738284), 'Test Overall BCE': 0.7422598600387573, 'Test tpr_at_tnr_0': array(0.5375), 'Test fnr_at_thres-group_0': 0.125, 'Test fpr_at_thres-group_0': np.float64(0.3928571428571429), 'Test recall_at_thres-group_0': 0.875, 'Test specificity_at_thres-group_0': np.float64(0.6071428571428571), 'Test ECE-group_0': np.float64(0.24499242357625106), 'Test BCE-group_0': 0.9295716881752014, 'Test tpr_at_tnr_1': array(0.67666667), 'Test fnr_at_thres-group_1': 0.33333333333333337, 'Test fpr_at_thres-group_1': np.float64(0.19444444444444442), 'Test recall_at_thres-group_1': 0.6666666666666666, 'Test specificity_at_thres-group_1': np.float64(0.8055555555555556), 'Test ECE-group_1': np.float64(0.2040011291343641), 'Test BCE-group_1': 0.6017760038375854, 'Test worst_auc': 0.7455357142857143, 'Test worst_group': 'auc-group_0', 'Test Overall FPR': 0.28125, 'Test Overall FNR': 0.25, 'Test FPR-group_0': 0.3929, 'Test FPR-group_1': 0.1944, 'Test FNR-group_0': 0.125, 'Test FNR-group_1': 0.3333}
